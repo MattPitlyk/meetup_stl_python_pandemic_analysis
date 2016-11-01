@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.link {
+  stroke: #ccc;
+}
+
+.node text {
+  pointer-events: none;
+  font: 10px sans-serif;
+}
+
+.node.fixed {
+//  fill: #f00;
+}
+
+div.tooltip { 
+    position: absolute;     
+    text-align: center;     
+    width: 50px;          
+    height: 15x;         
+    padding: 2px;       
+    font: 12px sans-serif;    
+    background: lightsteelblue; 
+    border: 0px;    
+    border-radius: 8px;     
+    pointer-events: none;     
+}
+</style>
+
+<body>
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+var width = 1300,
+    height = 750,
+    fill = d3.scale.category10()
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var force = d3.layout.force()
+    .gravity(0.05)
+    .distance(100)
+    .charge(-100)
+    .size([width, height]);
+
+var drag = force.drag()
+    .on("dragstart", dragstart);
+
+// div for tooltip
+var div = d3.select("body").append("div") 
+    .attr("class", "tooltip")       
+    .style("opacity", 0);
+
+
+d3.json("force.json", function(error, json) {
+  if (error) throw error;
+
+  force
+      .nodes(json.nodes)
+      .links(json.links)
+      .start();
+
+  var link = svg.selectAll(".link")
+      .data(json.links)
+      .enter().append("line")
+      .attr("class", "link");
+
+  var node = svg.selectAll(".node")
+      .data(json.nodes)
+      .enter().append("g")
+      .attr("class", "node")
+      .on("dblclick", dblclick)
+      .call(force.drag);
+
+  node.append("svg:circle")
+      .attr("x", -8)
+      .attr("y", -8)
+      .attr("r", function(d) { return d.r})  // Set radius.
+      .style("fill", function(d) { return fill(d.group); })  // Color node based on group.
+      .style("opacity", function(d) { return (d.rows>0) ? 1 : .1}) // Make node less opaque if it has 0 rows.
+      // tooltip
+      .on("mouseover", function(d) {    
+            div.transition()    
+                .duration(200)    
+                .style("opacity", .9);    
+            div .html("rows: " + d.rows)  
+                .style("left", (d3.event.pageX) + "px")   
+                .style("top", (d3.event.pageY - 28) + "px");  
+            })          
+        .on("mouseout", function(d) {   
+            div.transition()    
+                .duration(500)    
+                .style("opacity", 0);}); 
+      // end tooltip
+
+  node.append("text")
+      .attr("dx", 12)
+      .attr("dy", ".35em")
+      .text(function(d) { return d.name });
+
+  force.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+  });
+
+  // This line of code will fix the nodes in place.
+  node.each(function(d){ d.fixed= true; })
+
+});
+
+
+function dblclick(d) {
+  d3.select(this).classed("fixed", d.fixed = false);
+}
+function dragstart(d) {
+  d3.select(this).classed("fixed", d.fixed = true);
+}
+
+</script>
+
+</body>
