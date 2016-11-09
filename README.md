@@ -8,3 +8,5 @@ Notebook Order:
   -Intro to NetworkX  
   -Analysis of Pandemic - Part II  
   -Conclusions and References  
+  
+  Notebooks include speaker notes.
